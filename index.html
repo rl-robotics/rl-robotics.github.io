@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RL × Robotics 学习地图</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@600;700;800&display=swap" />
+  <link rel="stylesheet" href="vendor/katex/katex.min.css" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header id="nav">
+    <div class="brand" data-go="/">RL <span>×</span> Robotics</div>
+    <nav id="nav-links">
+      <a class="pill ghost" data-route="/" href="#/">首页</a>
+      <a class="pill ghost" data-route="/learn" href="#/learn">学习路线<span class="long">·从零开始</span></a>
+      <a class="pill ghost" data-route="/map" href="#/map">知识图谱</a>
+      <a class="pill ghost" data-route="/timeline" href="#/timeline">运控演进</a>
+      <a class="pill ghost" data-route="/papers" href="#/papers">论文库</a>
+    </nav>
+    <div class="nav-right">
+      <div id="search-wrap">
+        <input id="search" type="search" placeholder="搜索：PPO、域随机化、ASAP…" autocomplete="off" />
+        <div id="search-results"></div>
+      </div>
+      <button id="help-btn" class="pill" title="使用说明">说明</button>
+      <a class="pill primary" href="#/learn/intro">开始学习</a>
+    </div>
+  </header>
+
+  <!-- 首页 -->
+  <section id="page-home" class="page doc"><div id="home-root"></div></section>
+
+  <!-- 学习路线 -->
+  <section id="page-learn" class="page doc"><div id="learn-root"></div></section>
+
+  <!-- 知识图谱 -->
+  <section id="page-map" class="page app">
+    <svg id="rl-svg"></svg>
+    <aside class="side-card">
+      <div class="page-intro"><b>知识图谱</b>约 90 个 RL 概念和算法的关系网。<br>点击任意节点查看简介，再点"阅读详细讲解"进入课程。</div>
+      <div class="card-title">布局</div>
+      <div class="seg" id="rl-layout">
+        <button data-layout="force" class="active">知识网络</button>
+        <button data-layout="time">按年代</button>
+      </div>
+      <div class="card-title">学习路径 · 一步步点亮</div>
+      <div id="rl-paths" class="path-list"></div>
+      <div class="card-title">方法族 · 点击筛选</div>
+      <div id="rl-legend" class="legend"></div>
+      <div class="card-title">连线含义</div>
+      <div class="legend links">
+        <div><i class="ln base"></i>理论基础</div>
+        <div><i class="ln evo"></i>改进 / 演化</div>
+        <div><i class="ln use"></i>借鉴 / 组合</div>
+      </div>
+    </aside>
+    <div class="bottom-bar">
+      <button class="play" id="rl-play" title="按年份回放">▶</button>
+      <input type="range" id="rl-year" min="1955" max="2026" value="2026" />
+      <div class="year-label" id="rl-year-label">2026</div>
+      <div class="bar-hint">按年份回放知识的出现顺序</div>
+    </div>
+    <div id="rl-path-caption" class="caption hidden"></div>
+  </section>
+
+  <!-- 运控演进 -->
+  <section id="page-timeline" class="page app">
+    <svg id="tl-svg"></svg>
+    <aside class="side-card">
+      <div class="page-intro"><b>运控演进</b>约 110 篇里程碑论文，按 8 条技术流排列。圆越大影响越大；悬停查看技术谱系。<br>不知从哪看起？点一条故事线 ↓</div>
+      <div class="card-title">技术故事线 · 自动导览</div>
+      <div id="tl-stories" class="path-list"></div>
+      <div class="card-title">节点大小依据</div>
+      <div class="seg small" id="tl-size">
+        <button data-size="mix" class="active">综合</button>
+        <button data-size="cites">引用</button>
+        <button data-size="tier">地位</button>
+      </div>
+      <label class="check"><input type="checkbox" id="tl-hot" checked /> 显示近期热点</label>
+      <label class="check"><input type="checkbox" id="tl-edges" checked /> 显示继承关系</label>
+      <div class="card-title">图例</div>
+      <div class="legend tl-legend">
+        <div><i class="dot t1"></i>里程碑</div>
+        <div><i class="dot t2"></i>重要工作</div>
+        <div><i class="dot t3"></i>代表作</div>
+        <div><i class="dot hot"></i>近 12 月热点（自动）</div>
+      </div>
+    </aside>
+    <div class="bottom-bar">
+      <button class="play" id="tl-play" title="时间回放">▶</button>
+      <input type="range" id="tl-time" min="0" max="1000" value="1000" />
+      <div class="year-label" id="tl-time-label">全部</div>
+      <div class="bar-hint">滚轮缩放 · 拖拽平移</div>
+    </div>
+    <div id="tl-story-caption" class="caption hidden"></div>
+  </section>
+
+  <!-- 论文库 -->
+  <section id="page-papers" class="page doc">
+    <div class="river-wrap">
+      <div class="river-head">
+        <div>
+          <h2>论文库 <small id="river-meta"></small></h2>
+          <p>收录 <a href="https://github.com/YanjieZe/awesome-humanoid-robot-learning" target="_blank">awesome-humanoid-robot-learning</a> 的全部论文，引用数来自 Semantic Scholar。点击任意论文可查看原文、项目页与代码链接。</p>
+        </div>
+        <div id="river-cats" class="chips"></div>
+      </div>
+      <div class="panel-block">
+        <div class="block-title">研究热度：每月新增论文</div>
+        <div class="block-sub">各颜色代表不同研究方向；悬停查看当月明细。</div>
+        <svg id="stream-svg"></svg>
+      </div>
+      <div class="two-col">
+        <div class="panel-block">
+          <div class="block-title">影响力 Top 20 <span class="seg small inline" id="top-mode"><button data-mode="score" class="active">综合</button><button data-mode="cites">总引用</button><button data-mode="vel">引用速度</button><button data-mode="recent">近 6 月</button></span></div>
+          <div class="block-sub">不知道读什么？从这里挑。</div>
+          <ol id="top-list" class="top-list"></ol>
+        </div>
+        <div class="panel-block">
+          <div class="block-title">技术关键词热度</div>
+          <div class="block-sub">按季度统计标题关键词；点击卡片在下方高亮相关论文。</div>
+          <div id="kw-grid" class="kw-grid"></div>
+        </div>
+      </div>
+      <div class="panel-block">
+        <div class="block-title">全部论文分布</div>
+        <div class="block-sub">每个点是一篇论文，越大影响力越高（总引用 + 引用速度 + 会议档次 + 是否开源）。顶部搜索可高亮。</div>
+        <svg id="swarm-svg"></svg>
+      </div>
+    </div>
+  </section>
+
+  <aside id="panel" class="hidden">
+    <button id="panel-close" title="关闭 (Esc)">×</button>
+    <div id="panel-body"></div>
+  </aside>
+  <div id="tooltip" class="hidden"></div>
+
+  <div id="help" class="modal hidden">
+    <div class="modal-card">
+      <button class="modal-close">×</button>
+      <h2>这个网站怎么用</h2>
+      <div class="help-grid">
+        <div><h3>学习路线</h3><p>9 章课程，按顺序从"什么是强化学习"讲到 PPO、SAC、sim-to-real 和运动模仿。每节有直觉解释、公式逐项说明、例子、伪代码、常见误区、自测题和延伸阅读。左侧目录会记录你读完了哪些（保存在本浏览器中）。</p></div>
+        <div><h3>知识图谱</h3><p>把所有概念画成一张关系网，适合"查漏补缺"：看某个算法依赖哪些前置知识、又启发了什么。点击节点 → "阅读详细讲解"可跳到对应课程。</p></div>
+        <div><h3>运控演进</h3><p>机器人运控的论文时间线，横轴是时间，纵向是技术流。故事线会带你按顺序看完一条技术路线；详情里的"读前须知"会链接到需要的 RL 课程。</p></div>
+        <div><h3>论文库与快捷键</h3><p>论文库收录 awesome 列表全部论文，可按影响力排序。快捷键：<kbd>/</kbd> 搜索、<kbd>Esc</kbd> 关闭面板、<kbd>空格</kbd> 播放/暂停。更新数据：<code>python3 scripts/update_data.py</code></p></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 调试：后台/无头页面中 requestAnimationFrame 不触发，?noraf 时以定时器替代
+    if (location.search.includes('noraf')) { window.requestAnimationFrame = f => setTimeout(() => f(performance.now()), 16); document.documentElement.classList.add('noraf'); }
+  </script>
+  <script src="vendor/d3.min.js"></script>
+  <script src="vendor/katex/katex.min.js"></script>
+  <script src="data/rl_knowledge.js"></script>
+  <script src="data/milestones.js"></script>
+  <script src="data/lessons.js"></script>
+  <script src="data/papers.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/view-home.js"></script>
+  <script src="js/view-learn.js"></script>
+  <script src="js/view-rl.js"></script>
+  <script src="js/view-timeline.js"></script>
+  <script src="js/view-river.js"></script>
+  <script>App.start();</script>
+</body>
+</html>

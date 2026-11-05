@@ -1,0 +1,7 @@
+# 本地工具配置
+.claude/
+# awesome 列表 README 的本地副本（只是缓存，不随仓库发布）
+data/cache/awesome_README.md
+__pycache__/
+*.pyc
+.DS_Store
