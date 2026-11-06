@@ -45,6 +45,8 @@ python3 scripts/update_data.py --offline  # 不联网，只用缓存重新生成
 
 `.github/workflows/update-data.yml` 每周一自动运行 `update_data.py`，有新论文或引用变化时自动提交，网站随之更新。也可以在 Actions 页面手动触发。
 
+**修改网站文件后**，提交前先运行 `python3 scripts/bump_version.py`：它根据文件内容给 `index.html` 里的脚本和样式地址加上版本号，访问者的浏览器就会立即拿到新版本，而不是继续用缓存的旧文件。
+
 ## 目录
 
 ```

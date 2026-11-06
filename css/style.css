@@ -429,10 +429,15 @@ i.dot.hot { background: rgba(255,149,0,.2); border: 1.5px dashed #ff9500; width:
 .noraf .reveal { transition: none; }
 
 /* ───── 深入讲解 / 互动演示 ───── */
-.mode-bar { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-top: 22px; padding: 14px 18px; border-radius: var(--radius-lg); border: 1px solid var(--line-soft); }
-.mode-bar b { display: block; font-size: 14px; }
-.mode-bar span { font-size: 12.5px; color: var(--text-2); }
-.mode-bar .seg { flex: none; width: 150px; }
+.mode-bar { display: flex; align-items: center; gap: 16px; margin-top: 24px; padding: 16px 18px; border-radius: var(--radius-lg); background: linear-gradient(135deg, rgba(0,113,227,.09), rgba(142,78,198,.07)); border: 1px solid rgba(0,113,227,.18); }
+.mode-bar .mb-icon { flex: none; width: 36px; height: 36px; border-radius: 50%; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 700; }
+.mode-bar .mb-text { flex: 1; min-width: 0; }
+.mode-bar b { display: block; font-size: 15px; color: var(--text); }
+.mode-bar span { font-size: 13px; color: var(--text-2); }
+.mode-bar .seg { flex: none; width: 160px; background: #fff; }
+.mode-bar .seg button.active { background: var(--accent); color: #fff; }
+.mode-fab { position: fixed; right: 24px; bottom: 24px; z-index: 20; border: 0; border-radius: 999px; padding: 12px 20px; background: var(--text); color: #fff; font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; box-shadow: var(--shadow-lg); }
+.mode-fab:hover { background: #000; }
 details.deep { margin-top: 14px; border: 1px solid var(--line-soft); border-radius: var(--radius-lg); background: #fff; overflow: hidden; transition: box-shadow .25s; }
 details.deep[open] { box-shadow: var(--shadow); border-color: transparent; }
 details.deep > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 10px; padding: 14px 18px; background: var(--bg-alt); }

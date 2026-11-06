@@ -6,8 +6,8 @@
   <title>RL × Robotics 学习地图</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@600;700;800&display=swap" />
-  <link rel="stylesheet" href="vendor/katex/katex.min.css" />
-  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="vendor/katex/katex.min.css?v=1612bcd7" />
+  <link rel="stylesheet" href="css/style.css?v=210b1ec8" />
 </head>
 <body>
   <header id="nav">
@@ -155,22 +155,22 @@
     // 调试：后台/无头页面中 requestAnimationFrame 不触发，?noraf 时以定时器替代
     if (location.search.includes('noraf')) { window.requestAnimationFrame = f => setTimeout(() => f(performance.now()), 16); document.documentElement.classList.add('noraf'); }
   </script>
-  <script src="vendor/d3.min.js"></script>
-  <script src="vendor/katex/katex.min.js"></script>
-  <script src="data/rl_knowledge.js"></script>
-  <script src="data/milestones.js"></script>
-  <script src="data/lessons.js"></script>
-  <script src="data/lessons_deep1.js"></script>
-  <script src="data/lessons_deep2.js"></script>
-  <script src="data/lessons_deep3.js"></script>
-  <script src="data/papers.js"></script>
-  <script src="js/app.js"></script>
-  <script src="js/view-home.js"></script>
-  <script src="js/demos.js"></script>
-  <script src="js/view-learn.js"></script>
-  <script src="js/view-rl.js"></script>
-  <script src="js/view-timeline.js"></script>
-  <script src="js/view-river.js"></script>
+  <script src="vendor/d3.min.js?v=69faba9d"></script>
+  <script src="vendor/katex/katex.min.js?v=80102fec"></script>
+  <script src="data/rl_knowledge.js?v=8bc0726b"></script>
+  <script src="data/milestones.js?v=6e224dbb"></script>
+  <script src="data/lessons.js?v=f0d06619"></script>
+  <script src="data/lessons_deep1.js?v=5f66f3f8"></script>
+  <script src="data/lessons_deep2.js?v=0cd02aac"></script>
+  <script src="data/lessons_deep3.js?v=9324aa1f"></script>
+  <script src="data/papers.js?v=8194b672"></script>
+  <script src="js/app.js?v=096c9d90"></script>
+  <script src="js/view-home.js?v=5c2688ad"></script>
+  <script src="js/demos.js?v=3860f674"></script>
+  <script src="js/view-learn.js?v=cdfaab18"></script>
+  <script src="js/view-rl.js?v=b86e5557"></script>
+  <script src="js/view-timeline.js?v=5f22e4f5"></script>
+  <script src="js/view-river.js?v=f97941a4"></script>
   <script>App.start();</script>
 </body>
 </html>

@@ -20,11 +20,13 @@ jobs:
       - name: Fetch papers and citations
         env:
           S2_API_KEY: ${{ secrets.S2_API_KEY }}   # 可选：在仓库 Secrets 中配置以提高限速
-        run: python3 scripts/update_data.py
+        run: |
+          python3 scripts/update_data.py
+          python3 scripts/bump_version.py   # 数据变化后更新资源版本号，避免浏览器缓存旧数据
       - name: Commit if changed
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/papers.js data/cache/s2_cache.json
+          git add data/papers.js data/cache/s2_cache.json index.html
           git diff --cached --quiet || git commit -m "chore: weekly paper data update"
           git push

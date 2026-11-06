@@ -84,7 +84,7 @@ App.register('learn', (() => {
     return `<div class="crumb"><a href="#/">首页</a> / <a href="#/learn">学习路线</a> / ${L.ch ? (L.ch.id === 'cx' ? '附录' : '第 ' + (L.chNo + 1) + ' 章 · ' + esc(L.ch.name)) : ''}</div>
       <h1>${esc(L.title)}</h1><div class="en">${esc(L.en)}</div>
       <div class="meta-row">${lvlTag(L.level)}<span class="tag">约 ${L.mins} 分钟</span>${L.year ? `<span class="tag">${L.year} 年</span>` : ''}${L.node ? `<span class="tag"><i style="width:7px;height:7px;border-radius:50%;background:${App.groupById.get(L.node.g).color};display:inline-block"></i>${esc(App.groupById.get(L.node.g).name)}</span>` : ''}${L.deep ? '' : '<span class="tag">知识点简介</span>'}</div>
-      ${deep.length || demos.length ? `<div class="mode-bar"><div><b>本节包含 ${deep.length ? deep.length + ' 个深入讲解' : ''}${deep.length && demos.length ? '、' : ''}${demos.length ? demos.length + ' 个互动演示' : ''}</b><span>深入讲解默认折叠，点击卡片标题即可展开；也可以切换到"详细模式"一次展开全部。</span></div>
+      ${deep.length || demos.length ? `<div class="mode-bar"><div class="mb-icon">＋</div><div class="mb-text"><b>本节包含 ${deep.length ? deep.length + ' 个深入讲解' : ''}${deep.length && demos.length ? '、' : ''}${demos.length ? demos.length + ' 个互动演示' : ''}</b><span>逐步推导、数值案例、代码等深入内容默认折叠在各小节下方，点击卡片即可展开；选"详细"一次展开全部。</span></div>
         <div class="seg" id="mode-seg"><button data-mode="brief" class="${mode === 'brief' ? 'active' : ''}">精简</button><button data-mode="full" class="${mode === 'full' ? 'active' : ''}">详细</button></div></div>` : ''}
       <div class="oneline"><small>一句话理解</small>${App.md(L.one).replace(/^<div class="md"><p>|<\/p><\/div>$/g, '')}</div>
       ${L.prereq.length ? `<div class="prereq">建议先了解：${L.prereq.map(chip).join('')}</div>` : ''}
@@ -106,18 +106,21 @@ App.register('learn', (() => {
     const L = App.lesson(id);
     if (!L) { root.innerHTML = index(); return; }
     cur = id;
-    root.innerHTML = `<div class="learn-layout">${toc(id)}<main class="article">${lessonHtml(L)}</main></div>`;
+    root.innerHTML = `<div class="learn-layout">${toc(id)}<main class="article">${lessonHtml(L)}</main></div>`
+      + (deepOf(id).length ? `<button class="mode-fab" id="mode-fab">${mode === 'full' ? '收起全部深入讲解' : '展开全部深入讲解'}</button>` : '');
     page.scrollTop = 0;
     const t = root.querySelector('.toc a.cur'); if (t) t.scrollIntoView({ block: 'center' });
     document.getElementById('mark-done').onclick = () => { App.progress.set(id, !App.progress.has(id)); render(id); };
     if (window.Demos) Demos.mount(root);
-    const seg = document.getElementById('mode-seg');
-    if (seg) seg.onclick = e => {
-      const m = e.target.dataset.mode; if (!m) return;
+    const seg = document.getElementById('mode-seg'), fab = document.getElementById('mode-fab');
+    const setMode = m => {
       mode = m; try { localStorage.setItem('rlr-mode', m); } catch (err) {}
-      seg.querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.mode === m));
+      if (seg) seg.querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.mode === m));
+      if (fab) fab.textContent = m === 'full' ? '收起全部深入讲解' : '展开全部深入讲解';
       root.querySelectorAll('details.deep').forEach(d => { d.open = m === 'full'; });
     };
+    if (seg) seg.onclick = e => { if (e.target.dataset.mode) setMode(e.target.dataset.mode); };
+    if (fab) fab.onclick = () => setMode(mode === 'full' ? 'brief' : 'full');
     root.querySelectorAll('.codeblock .copy').forEach(btn => btn.onclick = () => {
       const txt = btn.nextElementSibling.textContent;
       (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(() => { btn.textContent = '已复制'; setTimeout(() => btn.textContent = '复制代码', 1500); }, () => { btn.textContent = '请手动选中复制'; });
