@@ -69,13 +69,16 @@ const App = (() => {
   function md(text) {
     if (!text) return '';
     // 块内按行类型分组：普通行合并为段落，"- " / "1. " 开头的连续行合并为列表
-    const kind = l => /^\s*- /.test(l) ? 'ul' : /^\s*\d+\. /.test(l) ? 'ol' : 'p';
+    const kind = l => /^\s*\|/.test(l) ? 'table' : /^\s*- /.test(l) ? 'ul' : /^\s*\d+\. /.test(l) ? 'ol' : 'p';
+    const cells = l => l.trim().replace(/^\||\|$/g, '').split('|').map(c => inline(c.trim()));
+    const table = ls => { const rows = ls.filter(l => !/^\s*\|[\s:|-]+\|\s*$/.test(l)); const [h, ...body] = rows;
+      return `<div class="md-table"><table><thead><tr>${cells(h).map(c => `<th>${c}</th>`).join('')}</tr></thead><tbody>${body.map(r => `<tr>${cells(r).map(c => `<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`; };
     return '<div class="md">' + text.trim().split(/\n\s*\n/).map(block => {
       const b = block.trim();
       if (b.startsWith('$$') && b.endsWith('$$') && b.indexOf('$$', 2) === b.length - 2) return tex(b.slice(2, -2), true);
       const groups = [];
       b.split('\n').forEach(l => { const k = kind(l); if (groups.length && groups[groups.length - 1].k === k) groups[groups.length - 1].ls.push(l); else groups.push({ k, ls: [l] }); });
-      return groups.map(g => g.k === 'p' ? `<p>${inline(g.ls.join(''))}</p>`
+      return groups.map(g => g.k === 'table' ? table(g.ls) : g.k === 'p' ? `<p>${g.ls.map(inline).join('<br>')}</p>`
         : `<${g.k}>${g.ls.map(l => `<li>${inline(l.replace(/^\s*(- |\d+\. )/, ''))}</li>`).join('')}</${g.k}>`).join('');
     }).join('') + '</div>';
   }

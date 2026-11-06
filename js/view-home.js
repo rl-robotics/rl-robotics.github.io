@@ -2,6 +2,7 @@
 App.register('home', (() => {
   const root = document.getElementById('home-root');
   const deepCount = Object.keys(LESSONS).length;
+  const deepItems = Object.values(window.DEEP || {}).reduce((n, v) => n + v.length, 0);
   let carIdx = 0, carTimer = null;
 
   // 入口卡片的小插图（线稿）
@@ -26,7 +27,7 @@ App.register('home', (() => {
       </div>
       <div class="hero-card reveal"><svg id="hero-svg"></svg></div>
       <div class="floating-note reveal">
-        <div><b>${totalLessons} 节课 · 9 章 · 其中 ${deepCount} 节精讲</b><span>从 MDP 到 PPO、SAC，再到 sim-to-real 与运动模仿</span></div>
+        <div><b>${totalLessons} 节课 · ${deepCount} 节精讲 · ${deepItems} 个可展开的深入讲解</b><span>逐步推导、数值案例、Python 代码，以及 7 种互动演示</span></div>
         <a class="pill primary" href="#/learn">学习路线</a>
       </div>
     </section>
@@ -35,7 +36,7 @@ App.register('home', (() => {
       <div class="section-head reveal"><h2>你想做什么？</h2><p>四个入口，<b>对应四种需求</b>。不确定的话，从第一个开始。</p></div>
       <div class="tiles">
         <div class="tile reveal" data-go="/learn">${ART.learn}<div class="t-num">01 · 学习路线</div><h3>我是新手，<br>想系统地学 RL</h3>
-          <p>9 章课程，从"什么是强化学习"一路讲到 PPO 和机器人 sim-to-real。每节都有直觉、公式、例子、自测题。</p>
+          <p>9 章课程，从"什么是强化学习"一路讲到 PPO 和机器人 sim-to-real。每节都有直觉、公式、例子、自测题；想深入时可展开逐步推导、数值案例和代码，还能动手操作互动演示。</p>
           <div class="t-go">从第一课开始 →</div></div>
         <div class="tile reveal" data-go="/map">${ART.map}<div class="t-num">02 · 知识图谱</div><h3>想搞懂某个算法<br>从哪来、依赖什么</h3>
           <p>约 90 个概念的关系网，能看到前置知识和后续发展。直接跳到常见算法：</p>
