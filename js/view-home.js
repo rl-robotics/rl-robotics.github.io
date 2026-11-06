@@ -27,7 +27,7 @@ App.register('home', (() => {
       </div>
       <div class="hero-card reveal"><svg id="hero-svg"></svg></div>
       <div class="floating-note reveal">
-        <div><b>${totalLessons} 节课 · ${deepCount} 节精讲 · ${deepItems} 个可展开的深入讲解</b><span>逐步推导、数值案例、Python 代码，以及 7 种互动演示</span></div>
+        <div><b>${totalLessons} 节课 · ${deepCount} 节精讲 · ${deepItems} 个可展开的深入讲解</b><span>逐步推导、数值案例、Python 代码，以及 10 种互动演示</span></div>
         <a class="pill primary" href="#/learn">学习路线</a>
       </div>
     </section>

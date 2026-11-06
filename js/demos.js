@@ -308,7 +308,107 @@ window.Demos = (() => {
     draw();
   }
 
-  const registry = { grid, gamma, bandit, rw: randomWalk, gauss, ppoclip, gae };
+
+  // ───────── 8. PD 控制器：刚度、阻尼与延迟 ─────────
+  function pd(box) {
+    const f = frame(box, 'PD 控制器跟踪目标角度', '单个关节（转动惯量 0.1 kg·m²），t=0 时目标从 0 跳到 0.5 rad');
+    let Kp = 20, Kd = .5, lat = 0, tauMax = 30;
+    const W = 520, H = 200, svg = d3.select(f.viz).append('svg').attr('viewBox', `0 0 ${W} ${H}`).attr('class', 'dm-svg');
+    function sim() {
+      const I = .1, dt = .001, T = 1.0, target = .5, d = Math.round(lat / 1000 / dt);
+      let q = 0, v = 0; const hist = [], out = [];
+      for (let i = 0; i <= T / dt; i++) {
+        hist.push([q, v]); const [qd, vd] = hist[Math.max(0, hist.length - 1 - d)];   // 控制器看到的是延迟后的状态
+        const tau = Math.max(-tauMax, Math.min(tauMax, Kp * (target - qd) - Kd * vd));
+        v += tau / I * dt; q += v * dt;
+        if (i % 5 === 0) out.push([i * dt, q, tau]);
+      }
+      return out;
+    }
+    function draw() {
+      const data = sim(); svg.selectAll('*').remove();
+      const x = d3.scaleLinear().domain([0, 1]).range([36, W - 10]);
+      const y = d3.scaleLinear().domain([Math.min(-.1, d3.min(data, d => d[1])), Math.max(1, d3.max(data, d => d[1]))]).range([H - 22, 12]);
+      svg.append('g').attr('transform', `translate(0,${H - 22})`).call(d3.axisBottom(x).ticks(5).tickFormat(t => t + 's').tickSize(0)).attr('class', 'axis').select('.domain').remove();
+      svg.append('g').attr('transform', 'translate(36,0)').call(d3.axisLeft(y).ticks(4).tickSize(0)).attr('class', 'axis').select('.domain').remove();
+      svg.append('line').attr('x1', x(0)).attr('x2', x(1)).attr('y1', y(.5)).attr('y2', y(.5)).attr('stroke', C.gray).attr('stroke-dasharray', '4 4');
+      svg.append('path').attr('d', d3.line().x(d => x(d[0])).y(d => y(Math.max(y.domain()[0], Math.min(y.domain()[1], d[1]))))(data)).attr('fill', 'none').attr('stroke', C.blue).attr('stroke-width', 2.2);
+      svg.append('text').attr('x', W - 12).attr('y', y(.5) - 6).attr('text-anchor', 'end').attr('class', 'dm-lbl').text('目标 0.5 rad');
+      const last = data.slice(-40), osc = d3.max(last, d => d[1]) - d3.min(last, d => d[1]), peak = d3.max(data, d => d[1]);
+      const settle = (data.find((d, i) => data.slice(i).every(e => Math.abs(e[1] - .5) < .025)) || [NaN])[0];
+      const zeta = Kd / (2 * Math.sqrt(Kp * .1));
+      f.side.innerHTML = `<div class="dm-stat"><b>${zeta.toFixed(2)}</b><span>阻尼比 ζ = Kd / (2√(Kp·I))</span></div>
+        <div class="dm-stat"><b>${((peak - .5) / .5 * 100).toFixed(0)}%</b><span>超调量</span></div>
+        <div class="dm-stat"><b>${isNaN(settle) ? (osc > .05 ? '不稳定' : '> 1 s') : settle.toFixed(2) + ' s'}</b><span>进入 ±5% 的时间</span></div>
+        <p>ζ &lt; 1 会来回振荡，ζ ≈ 1 最快且不超调，ζ &gt; 1 偏迟缓。加入延迟后，同样的 Kp/Kd 可能变得振荡甚至发散——这就是仿真里不建模延迟会导致 sim-to-real 失败的原因。</p>`;
+    }
+    const row = document.createElement('div'); row.className = 'dm-row';
+    row.append(slider('刚度 Kp', 2, 100, 1, Kp, v => { Kp = v; draw(); }), slider('阻尼 Kd', 0, 6, .1, Kd, v => { Kd = v; draw(); }, v => v.toFixed(1)),
+      slider('延迟 (ms)', 0, 40, 1, lat, v => { lat = v; draw(); }), slider('力矩上限', 2, 50, 1, tauMax, v => { tauMax = v; draw(); }));
+    f.ctrl.appendChild(row);
+    f.note.textContent = '试试：Kp=20、Kd=0.5（legged_gym 中 A1 的设置），再把延迟调到 20ms，观察振荡明显加剧。';
+    draw();
+  }
+
+  // ───────── 9. 奖励核函数：误差 → 奖励 ─────────
+  function kernel(box) {
+    const f = frame(box, '跟踪奖励的形状：exp(−e²/σ)', '机器人跟踪奖励最常用的写法；σ 决定"多接近才算好"');
+    let sigma = .25, err = .4;
+    const W = 520, H = 190, svg = d3.select(f.viz).append('svg').attr('viewBox', `0 0 ${W} ${H}`).attr('class', 'dm-svg');
+    function draw() {
+      svg.selectAll('*').remove();
+      const x = d3.scaleLinear().domain([0, 2]).range([36, W - 10]), y = d3.scaleLinear().domain([0, 1.05]).range([H - 22, 10]);
+      svg.append('g').attr('transform', `translate(0,${H - 22})`).call(d3.axisBottom(x).ticks(5).tickSize(0)).attr('class', 'axis').select('.domain').remove();
+      svg.append('g').attr('transform', 'translate(36,0)').call(d3.axisLeft(y).ticks(4).tickSize(0)).attr('class', 'axis').select('.domain').remove();
+      const es = d3.range(0, 2.001, .01), r = e => Math.exp(-e * e / sigma);
+      svg.append('path').attr('d', d3.line().x(e => x(e)).y(e => y(Math.max(0, 1 - e / 2)))(es)).attr('fill', 'none').attr('stroke', C.gray).attr('stroke-dasharray', '4 4').attr('stroke-width', 1.5);
+      svg.append('path').attr('d', d3.line().x(e => x(e)).y(e => y(r(e)))(es)).attr('fill', 'none').attr('stroke', C.blue).attr('stroke-width', 2.5);
+      svg.append('circle').attr('cx', x(err)).attr('cy', y(r(err))).attr('r', 6).attr('fill', C.orange).attr('stroke', '#fff').attr('stroke-width', 2);
+      svg.append('text').attr('x', W - 12).attr('y', H - 28).attr('text-anchor', 'end').attr('class', 'dm-lbl').text('横轴：跟踪误差 e（如速度误差 m/s）；虚线为线性奖励对比');
+      const grad = 2 * err / sigma * r(err);
+      f.side.innerHTML = `<div class="dm-stat"><b>${r(err).toFixed(3)}</b><span>当前奖励（误差 ${err.toFixed(2)}）</span></div>
+        <div class="dm-stat"><b>${grad.toFixed(3)}</b><span>奖励对误差的斜率（学习信号强弱）</span></div>
+        <p>σ 小：只有非常接近目标才有奖励，要求精确，但误差大时几乎没有学习信号；σ 大：宽容，早期容易学，但最终精度可能不够。很多工作会在训练中逐渐收紧 σ。</p>`;
+    }
+    const row = document.createElement('div'); row.className = 'dm-row';
+    row.append(slider('σ', .02, 1.5, .01, sigma, v => { sigma = v; draw(); }), slider('当前误差 e', 0, 2, .01, err, v => { err = v; draw(); }));
+    f.ctrl.appendChild(row);
+    f.note.textContent = 'legged_gym 的速度跟踪项正是 exp(−‖v_cmd − v‖² / 0.25)，即 σ = 0.25。';
+    draw();
+  }
+
+  // ───────── 10. 行为克隆的多模态问题 ─────────
+  function bcmodes(box) {
+    const f = frame(box, '示范有两种做法时，均方误差会学成什么', '灰色是人类示范：一半从左绕过障碍，一半从右绕');
+    let showMse = true, samples = [];
+    const W = 520, H = 230, svg = d3.select(f.viz).append('svg').attr('viewBox', `0 0 ${W} ${H}`).attr('class', 'dm-svg');
+    const path = (side, noise) => d3.range(0, 1.001, .05).map(t => [W / 2 + side * (120 + noise) * Math.sin(Math.PI * t), H - 20 - t * (H - 40)]);
+    const demos = d3.range(16).map(i => path(i % 2 ? 1 : -1, (Math.random() - .5) * 50));
+    function draw() {
+      svg.selectAll('*').remove();
+      const line = d3.line().curve(d3.curveCatmullRom);
+      demos.forEach(d => svg.append('path').attr('d', line(d)).attr('fill', 'none').attr('stroke', C.gray).attr('stroke-width', 1.2));
+      svg.append('circle').attr('cx', W / 2).attr('cy', H / 2).attr('r', 34).attr('fill', '#f6c9cb').attr('stroke', C.red);
+      svg.append('text').attr('x', W / 2).attr('y', H / 2 + 4).attr('text-anchor', 'middle').attr('class', 'dm-lbl').style('font-weight', 600).text('障碍');
+      svg.append('text').attr('x', W / 2).attr('y', H - 4).attr('text-anchor', 'middle').attr('class', 'dm-lbl').text('起点');
+      svg.append('text').attr('x', W / 2).attr('y', 12).attr('text-anchor', 'middle').attr('class', 'dm-lbl').text('终点');
+      if (showMse) {
+        const mean = demos[0].map((_, i) => [d3.mean(demos, d => d[i][0]), demos[0][i][1]]);
+        svg.append('path').attr('d', line(mean)).attr('fill', 'none').attr('stroke', C.red).attr('stroke-width', 3);
+      }
+      samples.forEach(s => svg.append('path').attr('d', line(s)).attr('fill', 'none').attr('stroke', C.blue).attr('stroke-width', 2.2));
+      f.side.innerHTML = `<p><b style="color:${C.red}">红线</b>：用均方误差回归得到的策略，等于所有示范的平均——正好穿过障碍。</p>
+        <p><b style="color:${C.blue}">蓝线</b>：生成式策略（混合高斯、扩散模型、flow matching）从分布中<b>采样</b>，每次只会选择一种做法，左或右。</p>
+        <p>这就是 Diffusion Policy、π0 等方法要用生成模型来表示动作的根本原因。</p>`;
+    }
+    const row = document.createElement('div'); row.className = 'dm-row';
+    const cb = document.createElement('label'); cb.className = 'dm-check'; cb.innerHTML = '<input type="checkbox" checked> 显示均方误差回归结果'; cb.querySelector('input').onchange = e => { showMse = e.target.checked; draw(); };
+    row.append(button('从生成式策略采样 5 条', () => { for (let i = 0; i < 5; i++) samples.push(path(Math.random() < .5 ? -1 : 1, (Math.random() - .5) * 40)); samples = samples.slice(-20); draw(); }, true), button('清空采样', () => { samples = []; draw(); }), cb);
+    f.ctrl.appendChild(row);
+    draw();
+  }
+
+  const registry = { grid, gamma, bandit, rw: randomWalk, gauss, ppoclip, gae, pd, kernel, bcmodes };
   function mount(root) {
     root.querySelectorAll('.demo[data-demo]').forEach(d => {
       if (d.dataset.ready) return; d.dataset.ready = '1';
@@ -321,6 +421,7 @@ window.Demos = (() => {
     bellman: [['grid', { mode: 'vi' }]], bellman_opt: [['grid', { mode: 'vi' }]], dp: [['grid', { mode: 'vi' }]],
     mc: [['rw']], td: [['rw']], tdlambda: [['gae']], explore: [['bandit']], qlearning: [['grid', { mode: 'q' }]], sarsa: [['grid', { mode: 'q' }]],
     pgt: [['gauss']], adv: [['gae']], gae: [['gae']], trpo: [['ppoclip']], ppo: [['ppoclip'], ['gae']], is: [['ppoclip']], maxent: [['gauss']], sac: [['gauss']],
+    actionspace: [['pd']], dr: [['pd']], shaping: [['kernel']], deepmimic: [['kernel']], bc: [['bcmodes']], diffpolicy: [['bcmodes']], dagger: [['bcmodes']],
   };
   return { mount, stopAll, BY_LESSON };
 })();
