@@ -1,13 +1,18 @@
-# 每周一自动拉取 awesome 列表的新论文与最新引用数，有变化就提交，GitHub Pages 随之更新
+# 每天跟随 awesome 列表更新：上游通常在 02:07–02:30 UTC 由机器人提交新论文，我们在其后拉取
+# 新论文与引用数（引用数缓存 7 天过期，所以每天只查新增论文，每周整体刷新一次），有实质变化才提交
 name: Update paper data
 
 on:
   schedule:
-    - cron: "0 2 * * 1"   # 每周一 02:00 UTC
+    - cron: "0 3 * * *"   # 每天 03:00 UTC（北京时间 11:00），晚于上游约 1 小时
   workflow_dispatch:        # 也可以在 Actions 页面手动触发
 
 permissions:
   contents: write
+
+concurrency:
+  group: update-data
+  cancel-in-progress: false
 
 jobs:
   update:
@@ -25,8 +30,15 @@ jobs:
           python3 scripts/bump_version.py   # 数据变化后更新资源版本号，避免浏览器缓存旧数据
       - name: Commit if changed
         run: |
+          # 只有生成时间变了不算更新，避免每天产生空提交
+          if git diff --quiet -I '"generated":' -- data/papers.js data/cache/s2_cache.json; then
+            echo "No new papers or citation changes."
+            exit 0
+          fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/papers.js data/cache/s2_cache.json index.html
-          git diff --cached --quiet || git commit -m "chore: weekly paper data update"
+          count=$(grep -oE '"count": [0-9]+' data/papers.js | grep -oE '[0-9]+')
+          git commit -m "chore: daily paper data update ($count papers)"
+          git pull --rebase
           git push
